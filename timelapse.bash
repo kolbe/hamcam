@@ -9,7 +9,14 @@ err(){
     exit 1
 }
 
-basedir='/Volumes/bucket/cam/floathouse/lake/AMC0461CEA066DC1D0/' #2020-11-09/pic_001'
+notify(){
+curl --data-urlencode token@/home/kolbe/pushover-lakecam.token \
+    --data-urlencode user@/home/kolbe/pushover-user.token \
+    --data-urlencode message="$*" \
+    https://api.pushover.net/1/messages.json
+}
+
+basedir='/mnt/bucket/bucket/cam/floathouse/lake/AMC0461CEA066DC1D0/' #2020-11-09/pic_001'
 
 baseurl='https://api.sunrise-sunset.org/json'
 lat=47.64
@@ -18,28 +25,33 @@ printf -v url "%s?lat=%s&lng=%s&formatted=0" "$baseurl" "$lat" "$lng"
 
 printf -v daydir "%s/%(%F)T/pic_001" "$basedir" -1
 
+jq --arg summary "starting timelapse" '.payload.summary = $summary' < alert.json | 
+    curl -X POST -d @- https://events.pagerduty.com/v2/enqueue
+
+notify "starting timelapse"
+
 info "Changing to $daydir"
 cd "$daydir" || err
 
 bounds=()
 json=$( curl "$url" ) || err "Error fetching from twilight API"
 jq . <<<"$json"
-# while read -r dt
-# do 
-#     bounds+=( "$(TZ=America/Los_Angeles gdate -d "$dt" +"%H.%M")" ) || err "Couldn't fetch bounds"
-# done < <(
-#     jq <<<"$json" -r '.results | (.astronomical_twilight_begin, .astronomical_twilight_end)' 
-# ) || err "Couldn't fetch bounds"
+while read -r dt
+do
+    bounds+=( "$(TZ=America/Los_Angeles date -d "$dt" +"%H.%M")" ) || err "Couldn't fetch bounds"
+done < <(
+    jq <<<"$json" -r '.results | (.astronomical_twilight_begin, .astronomical_twilight_end)' 
+) || err "Couldn't fetch bounds"
 
-mapfile -t bounds < <(
-    jq -r '
-        .results | 
-        to_entries | .[] |
-        select(.key|match("astronomical_")) |
-            .value |
-            ( gsub("[+].*"; "Z") | fromdate | strflocaltime("%H.%M"))
-    ' <<<"$json"
-)
+# mapfile -t bounds < <(
+#     jq -r '
+#         .results | 
+#         to_entries | .[] |
+#         select(.key|match("astronomical_")) |
+#             .value |
+#             ( gsub("[+].*"; "Z") | fromdate | strflocaltime("%H.%M"))
+#     ' <<<"$json"
+# )
 
 (( ${#bounds[@]} == 2 )) || err "Couldn't fetch bounds"
 
@@ -58,14 +70,18 @@ done
 files=("${files[@]}")
 info "Matched ${#files[@]} files to use as frames"
 
-printf -v outfile "%s/%(%F)T.mp4" ~/Downloads/ -1
-{
+printf -v outfile "%s/%(%F)T.mp4" /mnt/bucket/bucket/cam/floathouse/lake -1
+time {
     for (( i=0; i<${#files[@]}; i+=1000 ))
     do
         cat "${files[@]:i:1000}"
     done
-} | 
+} |
     ffmpeg -f image2pipe -framerate 60 -i - -vcodec libx264 -preset ultrafast -crf 23 "$outfile"
+
+notify "timelapse finished (${#files[@]} frames)"
+jq --arg summary "timelapse finished" '.payload.summary = $summary' < alert.json | 
+    curl -X POST -d @- https://events.pagerduty.com/v2/enqueue
 
 # https://video.stackexchange.com/questions/7903/how-to-losslessly-encode-a-jpg-image-sequence-to-a-video-in-ffmpeg
 # ffmpeg -f image2 -r 30 -i %09d.jpg -vcodec libx264 -profile:v high444 -refs 16 -crf 0 -preset ultrafast a.mp4

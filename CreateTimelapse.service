@@ -1,0 +1,8 @@
+[Unit]
+Description=Create Timelapse video
+
+[Service]
+ExecStart=/home/kolbe/hamcam/timelapse.bash
+Type=oneshot
+StandardOutput=append:/home/kolbe/timelapse.log
+StandardError=inherit

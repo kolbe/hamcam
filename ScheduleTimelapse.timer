@@ -1,0 +1,9 @@
+[Unit]
+Description=Schedule Timelapse timer
+
+[Timer]
+OnCalendar=*-*-* 08:00:00
+Unit=ScheduleTimelapse.service
+
+[Install]
+WantedBy=default.target

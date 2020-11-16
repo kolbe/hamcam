@@ -1,0 +1,6 @@
+[Unit]
+Description=Schedule Timelapse service
+
+[Service]
+ExecStart=/home/kolbe/hamcam/schedule_timelapse.bash
+Type=oneshot
