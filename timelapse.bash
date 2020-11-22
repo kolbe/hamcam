@@ -10,10 +10,10 @@ err(){
 }
 
 notify(){
-curl --data-urlencode token@/home/kolbe/pushover-lakecam.token \
-    --data-urlencode user@/home/kolbe/pushover-user.token \
-    --data-urlencode message="$*" \
-    https://api.pushover.net/1/messages.json
+	curl --data-urlencode token@/home/kolbe/pushover-lakecam.token \
+	    --data-urlencode user@/home/kolbe/pushover-user.token \
+	    --data-urlencode message="$*" \
+	    https://api.pushover.net/1/messages.json
 }
 
 basedir='/mnt/bucket/bucket/cam/floathouse/lake/AMC0461CEA066DC1D0/' #2020-11-09/pic_001'
@@ -24,9 +24,6 @@ lng=-122.33
 printf -v url "%s?lat=%s&lng=%s&formatted=0" "$baseurl" "$lat" "$lng"
 
 printf -v daydir "%s/%(%F)T/pic_001" "$basedir" -1
-
-jq --arg summary "starting timelapse" '.payload.summary = $summary' < alert.json | 
-    curl -X POST -d @- https://events.pagerduty.com/v2/enqueue
 
 notify "starting timelapse"
 
@@ -80,8 +77,6 @@ time {
     ffmpeg -f image2pipe -framerate 60 -i - -vcodec libx264 -preset ultrafast -crf 23 "$outfile"
 
 notify "timelapse finished (${#files[@]} frames)"
-jq --arg summary "timelapse finished" '.payload.summary = $summary' < alert.json | 
-    curl -X POST -d @- https://events.pagerduty.com/v2/enqueue
 
 # https://video.stackexchange.com/questions/7903/how-to-losslessly-encode-a-jpg-image-sequence-to-a-video-in-ffmpeg
 # ffmpeg -f image2 -r 30 -i %09d.jpg -vcodec libx264 -profile:v high444 -refs 16 -crf 0 -preset ultrafast a.mp4
