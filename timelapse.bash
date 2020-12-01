@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 
 info(){
-    printf "[INFO] %s\n" "$*"
+    printf '[INFO] %s\n' "$*"
 }
 
 err(){
-    printf "[ERROR] %s\n" "$*" >&2
+    printf '[ERROR] %s\n' "$*" >&2
     exit 1
 }
 
@@ -21,9 +21,9 @@ basedir='/mnt/bucket/bucket/cam/floathouse/lake/AMC0461CEA066DC1D0/' #2020-11-09
 baseurl='https://api.sunrise-sunset.org/json'
 lat=47.64
 lng=-122.33
-printf -v url "%s?lat=%s&lng=%s&formatted=0" "$baseurl" "$lat" "$lng"
+printf -v url '%s?lat=%s&lng=%s&formatted=0' "$baseurl" "$lat" "$lng"
 
-printf -v daydir "%s/%(%F)T/pic_001" "$basedir" -1
+printf -v daydir '%s/%(%F)T/pic_001' "$basedir" -1
 
 notify "starting timelapse"
 
@@ -67,7 +67,7 @@ done
 files=("${files[@]}")
 info "Matched ${#files[@]} files to use as frames"
 
-printf -v outfile "%s/%(%F)T.mp4" /mnt/bucket/bucket/cam/floathouse/lake -1
+printf -v outfile '%s/%(%F)T.mp4' /mnt/bucket/bucket/cam/floathouse/lake -1
 time {
     for (( i=0; i<${#files[@]}; i+=1000 ))
     do
