@@ -51,6 +51,7 @@ done < <(
 # )
 
 (( ${#bounds[@]} == 2 )) || err "Couldn't fetch bounds"
+bounds[1]=21.00
 
 info "Using frames from ${bounds[0]} to ${bounds[1]}"
 
