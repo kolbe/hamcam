@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-cd /mnt/bucket/bucket/cam/floathouse/lake/AMC0461CEA066DC1D0/ || exit
-for d in 2022-09-*
+cd /mnt/cam/cam/floathouse/lake/AMC0461CEA066DC1D0/ || exit
+for d in 2022-*
 do
 	[[ -d $d ]] || continue
 	printf -v url 'https://api.sunrise-sunset.org/json?formatted=0&lat=47.64&lng=-122.33&date=%s' "$d"

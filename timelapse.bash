@@ -1,5 +1,10 @@
 #!/usr/bin/env bash
 
+basedir='/mnt/cam/cam/floathouse/lake/AMC0461CEA066DC1D0/' #2020-11-09/pic_001'
+sunseturl='https://api.sunrise-sunset.org/json'
+lat=47.64
+lng=-122.33
+
 info(){
     printf '[INFO] %s\n' "$*"
 }
@@ -16,12 +21,7 @@ notify(){
 	    https://api.pushover.net/1/messages.json
 }
 
-basedir='/mnt/bucket/bucket/cam/floathouse/lake/AMC0461CEA066DC1D0/' #2020-11-09/pic_001'
-
-baseurl='https://api.sunrise-sunset.org/json'
-lat=47.64
-lng=-122.33
-printf -v url '%s?lat=%s&lng=%s&formatted=0' "$baseurl" "$lat" "$lng"
+printf -v url '%s?lat=%s&lng=%s&formatted=0' "$sunseturl" "$lat" "$lng"
 
 printf -v daydir '%s/%(%F)T/pic_001' "$basedir" -1
 
@@ -68,7 +68,8 @@ done
 files=("${files[@]}")
 info "Matched ${#files[@]} files to use as frames"
 
-printf -v outfile '%s/%(%F)T.mp4' /mnt/bucket/bucket/cam/floathouse/lake -1
+printf -v outfile '%s/%(%F)T.mp4' /mnt/cam/cam/floathouse/lake -1
+printf -v title '%(%Y %d %m)T' -1
 time {
     for (( i=0; i<${#files[@]}; i+=1000 ))
     do
@@ -78,6 +79,13 @@ time {
     ffmpeg -f image2pipe -framerate 60 -i - -vcodec libx264 -preset ultrafast -crf 23 "$outfile"
 
 notify "timelapse finished (${#files[@]} frames)"
+
+if output=$( youtube-upload "$outfile" --title "$title" )
+then
+    notify "upload finished ($output)"
+else
+    notify "youtube upload FAILED!"
+fi
 
 # https://video.stackexchange.com/questions/7903/how-to-losslessly-encode-a-jpg-image-sequence-to-a-video-in-ffmpeg
 # ffmpeg -f image2 -r 30 -i %09d.jpg -vcodec libx264 -profile:v high444 -refs 16 -crf 0 -preset ultrafast a.mp4
